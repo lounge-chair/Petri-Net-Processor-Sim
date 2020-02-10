@@ -122,7 +122,7 @@ public class Psim {
         }
         //////////////////////////
 
-        ///////////////////////// REGISTER FILE/////////////////////////
+        /////////////////////////REGISTER FILE///////////////////////////////
         int[] rgf = new int[16]; // Instantiating register file place (RGF)
         // TODO: read in register values
 
@@ -135,9 +135,15 @@ public class Psim {
             // System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
         }
         //////////////////////////
+
+        /////////////////////////DATA MEMORY/////////////////////////////////
         int[] dam = new int[16]; // Instantiating data memory place (DAM)
 
+        DAMsetup(datamemory, dam);
+
         // TODO: read in data values
+
+        //////////////////////////
 
         ///////////////////////// TRANSITIONS/////////////////////////
         // TODO: READ/DECODE
@@ -162,51 +168,56 @@ public class Psim {
 
         // read
         try {
-            Scanner scanInst = new Scanner(instructions);
+            Scanner scan = new Scanner(instructions);
 
-            while (scanInst.hasNextLine()) {
+            while (scan.hasNextLine()) {
                 if (instCount > 16) {
                     System.out.println("Too many instructions! Only 16 instructions can be inputted at once.");
                     System.exit(1);
                 }
                 // Parses input and places each segment into temporary array
-                String[] temp = scanInst.nextLine().replaceAll("\\<", "").replaceAll("\\>", "").split(",");
-                // DEBUG:
-                // System.out.println(Arrays.toString(temp));
-                //
-                inm[instCount].setOpcode(temp[0]); // Accesses temp array to set values in INM
+                String[] temp = scan.nextLine().replaceAll("\\<", "").replaceAll("\\>", "").split(",");
+                // Accesses temp array to set values in INM
+                inm[instCount].setOpcode(temp[0]); 
                 inm[instCount].setDestination(temp[1]);
                 inm[instCount].setSource1(temp[2]);
                 inm[instCount].setSource2(temp[3]);
 
                 instCount++;
             }
-            scanInst.close();
+            scan.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
     }
 
     public static void RGFsetup(File registers, int[] rgf) {
-
-        int instCount = 0;
-
-        // read
         try {
-            Scanner scanInst = new Scanner(registers);
+            Scanner scan = new Scanner(registers);
 
-            while (scanInst.hasNextLine()) {
-                if (instCount > 16) {
-                    System.out.println("Too many instructions! Only 16 instructions can be inputted at once.");
-                    System.exit(1);
-                }
+            while (scan.hasNextLine()) {
                 // Parses input and places each segment into temporary array
-                String[] temp = scanInst.nextLine().replaceAll("\\<R", "").replaceAll("\\>", "").split(",");
-                // System.out.println(Arrays.toString(temp));
-                //
+                String[] temp = scan.nextLine().replaceAll("\\<R", "").replaceAll("\\>", "").split(",");
+                // Use temporary array to fill indexes with their proper values
                 rgf[Integer.parseInt(temp[0])] = Integer.parseInt(temp[1]);
             }
-            scanInst.close();
+            scan.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void DAMsetup(File datamemory, int[] dam) {
+        try {
+            Scanner scan = new Scanner(datamemory);
+
+            while (scan.hasNextLine()) {
+                // Parses input and places each segment into temporary array
+                String[] temp = scan.nextLine().replaceAll("\\<", "").replaceAll("\\>", "").split(",");
+                // Use temporary array to fill indexes with their proper values
+                dam[Integer.parseInt(temp[0])] = Integer.parseInt(temp[1]);
+            }
+            scan.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
