@@ -49,6 +49,56 @@ class inb {
      * 4 attributes: 1. Opcode - String 2. Destination register - String 3. First
      * source value - int 4. Second source value - int
      */
+    private boolean hasToken;
+    private String opcode;
+    private String destination;
+    private int source1;
+    private int source2;
+
+    public inb() {
+        hasToken = false;  // Set the initial value for token
+    }
+
+    public boolean hasToken() {
+        return this.hasToken;
+    }
+
+    public void setToken(boolean hasToken) {
+        this.hasToken = hasToken;
+    }
+
+    public String getOpcode() {
+        return this.opcode;
+    }
+
+    public void setOpcode(String opcode) {
+        this.opcode = opcode;
+    }
+
+    public String getDestination() {
+        return this.destination;
+    }
+
+    public void setDestination(String destination) {
+        this.destination = destination;
+    }
+
+    public int getSource1() {
+        return this.source1;
+    }
+
+    public void setSource1(int source1) {
+        this.source1 = source1;
+    }
+
+    public int getSource2() {
+        return this.source2;
+    }
+
+    public void setSource2(int source2) {
+        this.source2 = source2;
+    }
+
 }
 
 class aib {
@@ -103,66 +153,95 @@ class reb {
 
 public class Psim {
     public static void main(String[] args) {
-        // Read in files
+        // Declare files
         File instructions = new File("instructions.txt");
         File registers = new File("registers.txt");
         File datamemory = new File("datamemory.txt");
 
-        // Instantiate places
-
-        ///////////////////////// INSTRUCTION MEMORY/////////////////////////
-        inm inm[] = new inm[16]; // Declaraing instruction memory array (INM)
-
+        // Read in files
+        ///////////////////////// INSTRUCTION MEMORY /////////////////////////
+        Deque<inm> inm = new ArrayDeque<inm>(); // Declaraing instruction memory array (INM)
         INMsetup(instructions, inm);
-
-        // DEBUG: CHECK INM ARRAY
-        for (int i = 0; i < 16; i++) {
-            System.out.println("Your OPCODE at INM " + i + " is " + inm[i].getOpcode());
-            // System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
-        }
         //////////////////////////
 
-        /////////////////////////REGISTER FILE///////////////////////////////
+        ///////////////////////// REGISTER FILE ///////////////////////////////
         int[] rgf = new int[16]; // Instantiating register file place (RGF)
-        // TODO: read in register values
-
-        RGFsetup(registers, rgf);
+        Arrays.fill(rgf, -99); // Set default value to -99
+        RGFsetup(registers, rgf); // Run setup function
 
         // DEBUG: CHECK RGF ARRAY
-       
         for (int j = 0; j < 16; j++) {
-            System.out.println("Your DATA at R" + j + " is " + rgf[j]);
+            System.out.println("registervalue at R" + j + " is " + rgf[j]);
             // System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
         }
         //////////////////////////
 
-        /////////////////////////DATA MEMORY/////////////////////////////////
+        ///////////////////////// DATA MEMORY /////////////////////////////////
         int[] dam = new int[16]; // Instantiating data memory place (DAM)
+        Arrays.fill(dam, -99); // Set default value to -99
+        DAMsetup(datamemory, dam); // Run setup function
 
-        DAMsetup(datamemory, dam);
-
-        // TODO: read in data values
-
+        // DEBUG: CHECK RGF ARRAY
+        for (int k = 0; k < 16; k++) {
+            System.out.println("DATA at " + k + " is " + dam[k]);
+            // System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
+        }
         //////////////////////////
 
-        ///////////////////////// TRANSITIONS/////////////////////////
-        // TODO: READ/DECODE
+        ///////////////////////// TRANSITIONS /////////////////////////
+        boolean fired = false;
+        int step = 0;
+        inb inb = new inb();
+        do {
+            //SETUP//////////////////////////////////////////////
+            System.out.println("\nSTEP " + step++ + ":");
+            fired = false;
+            /////////////////////////////////////////////////////
 
-        // TODO: ISSUE1
-        // TODO: ISSUE2
-        // TODO: ASU (add/sub unit)
-        // TODO: MLU1
-        // TODO: MLU2
-        // TODO: ADDR (address calculation)
-        // TODO: STORE
-        // TODO: WRITE
+            //READ/DECODE
+            if(inm.isEmpty() == false) {
+                fired = true;
+                //DEBUG:
+                System.out.println("DECODE OPCODE IS: " + inm.peek().getOpcode());
+                System.out.println("DECODE DEST IS: " + inm.peek().getDestination());
+                System.out.println("DECODE S1 IS: " + inm.peek().getSource1());
+                System.out.println("DECODE S2 IS: " + inm.peek().getSource2());
+                //
+                inb.setOpcode(inm.peek().getOpcode());
+                inb.setDestination(inm.peek().getDestination());
+                inb.setSource1(rgf[Character.getNumericValue(inm.peek().getSource1().charAt(1))]);
+                if(inm.peek().getSource2().charAt(0) == 'R') { //Check if source2 is register or immediate value
+                    inb.setSource1(rgf[Character.getNumericValue(inm.peek().getSource2().charAt(1))]);
+                } else {
+                    inb.setSource2(Character.getNumericValue(inm.peek().getSource2().charAt(0)));
+                }
+                inb.setToken(true);
+                //DEBUG:
+                System.out.println("READ OPCODE IS: " + inb.getOpcode());
+                System.out.println("READ DEST IS: " + inb.getDestination());
+                System.out.println("READ S1 IS: " + inb.getSource1());
+                System.out.println("READ S2 IS: " + inb.getSource2());
+                //
+            }
+            // TODO: ISSUE1
+            // TODO: ISSUE2
+            // TODO: ASU (add/sub unit)
+            // TODO: MLU1
+            // TODO: MLU2
+            // TODO: ADDR (address calculation)
+            // TODO: STORE
+            // TODO: WRITE
 
+            if(inm.isEmpty() == false) {
+            inm.pop();
+            }
+        } while (fired == true);
     }
 
-    public static void INMsetup(File instructions, inm[] inm) {
-        for (int i = 0; i < inm.length; i++) { // Creating INM objects
-            inm[i] = new inm();
-        }
+    public static void INMsetup(File instructions, Deque<inm> inm) {
+        // for (int i = 0; i < inm.length; i++) { // Creating INM objects
+
+        // }
 
         int instCount = 0;
 
@@ -175,17 +254,19 @@ public class Psim {
                     System.out.println("Too many instructions! Only 16 instructions can be inputted at once.");
                     System.exit(1);
                 }
+                inm tempINM = new inm();
                 // Parses input and places each segment into temporary array
                 String[] temp = scan.nextLine().replaceAll("\\<", "").replaceAll("\\>", "").split(",");
                 // Accesses temp array to set values in INM
-                inm[instCount].setOpcode(temp[0]); 
-                inm[instCount].setDestination(temp[1]);
-                inm[instCount].setSource1(temp[2]);
-                inm[instCount].setSource2(temp[3]);
+                tempINM.setOpcode(temp[0]);
+                tempINM.setDestination(temp[1]);
+                tempINM.setSource1(temp[2]);
+                tempINM.setSource2(temp[3]);
 
-                instCount++;
+                inm.add(tempINM);
             }
             scan.close();
+
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
