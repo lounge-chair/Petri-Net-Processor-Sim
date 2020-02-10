@@ -141,39 +141,16 @@ public class Psim
         /////////////////////////INSTRUCTION MEMORY/////////////////////////
         inm inm[] = new inm[16]; //Declaraing instruction memory array (INM)
 
-        for(int i=0; i< inm.length;i++){ //Creating INM objects
-            inm[i] = new inm();
-        }
+        INMsetup(instructions, inm);
 
-        int instCount = 0;
-
-        //read 
-        try
+        //DEBUG: CHECK INM ARRAY
+        int i = -99;
+        for(i = 0; i < 16; i++)
         {
-            Scanner scanInst = new Scanner(instructions);
-           
-            while (scanInst.hasNextLine()) {
-                if(instCount > 16)
-                {
-                    System.out.println("Too many instructions! Only 16 instructions can be inputted at once.");
-                    System.exit(1);
-                }
-                String[] temp = scanInst.nextLine().replaceAll("\\<", "").replaceAll("\\>", "").split(","); //Parses input and places each segment into temporary array
-                //DEBUG: 
-                System.out.println(Arrays.toString(temp));
-                //
-                inm[instCount].setOpcode(temp[0]);        //Accesses temp array to set values in INM
-                inm[instCount].setDestination(temp[1]);
-                inm[instCount].setSource1(temp[2]);
-                inm[instCount].setSource2(temp[3]);
-
-                instCount++;
-            }
-            scanInst.close();
+            System.out.println("Your OPCODE at INM " + i + " is " + inm[i].getOpcode());
+            //System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
         }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        //////////////////////////
 
         /////////////////////////REGISTER FILE/////////////////////////
         int[] rgf = new int[16]; //Instantiating register file place (RGF)
@@ -197,10 +174,43 @@ public class Psim
         //TODO: STORE
         //TODO: WRITE
 
-
+        
 	}
 
-	/*
-		Add transitions here as separate methods
-	*/
+	public static void INMsetup(File instructions, inm[] inm)
+        {
+            for(int i=0; i< inm.length;i++){ //Creating INM objects
+                inm[i] = new inm();
+            }
+    
+            int instCount = 0;
+    
+            //read 
+            try
+            {
+                Scanner scanInst = new Scanner(instructions);
+               
+                while (scanInst.hasNextLine()) {
+                    if(instCount > 16)
+                    {
+                        System.out.println("Too many instructions! Only 16 instructions can be inputted at once.");
+                        System.exit(1);
+                    }
+                    String[] temp = scanInst.nextLine().replaceAll("\\<", "").replaceAll("\\>", "").split(","); //Parses input and places each segment into temporary array
+                    //DEBUG: 
+                    //System.out.println(Arrays.toString(temp));
+                    //
+                    inm[instCount].setOpcode(temp[0]);        //Accesses temp array to set values in INM
+                    inm[instCount].setDestination(temp[1]);
+                    inm[instCount].setSource1(temp[2]);
+                    inm[instCount].setSource2(temp[3]);
+    
+                    instCount++;
+                }
+                scanInst.close();
+            }
+            catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
 }
