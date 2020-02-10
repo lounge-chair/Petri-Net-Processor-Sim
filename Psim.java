@@ -1,11 +1,8 @@
 import java.util.*;
 import java.io.*;
 
-class inm {
-    /*
-     * 4 attributes: 1. Opcode - String 2. Destination register - String 3. First
-     * Source Operand - String 4. Second Source Operand - String
-     */
+class INM {
+
     private String opcode;
     private String destination;
     private String source1;
@@ -44,19 +41,16 @@ class inm {
     }
 }
 
-class inb {
-    /*
-     * 4 attributes: 1. Opcode - String 2. Destination register - String 3. First
-     * source value - int 4. Second source value - int
-     */
+class INB {
+
     private boolean hasToken;
     private String opcode;
     private String destination;
     private int source1;
     private int source2;
 
-    public inb() {
-        hasToken = false;  // Set the initial value for token
+    public INB() {
+        hasToken = false; // Set the initial value for token
     }
 
     public boolean hasToken() {
@@ -101,34 +95,80 @@ class inb {
 
 }
 
-class aib {
+class AIB {
+
+    private boolean hasToken;
+    private String opcode;
+    private String destination;
+    private int source1;
+    private int source2;
+
+    public AIB() {
+        hasToken = false; // Set the initial value for token
+    }
+
+    public boolean hasToken() {
+        return this.hasToken;
+    }
+
+    public void setToken(boolean hasToken) {
+        this.hasToken = hasToken;
+    }
+
+    public String getOpcode() {
+        return this.opcode;
+    }
+
+    public void setOpcode(String opcode) {
+        this.opcode = opcode;
+    }
+
+    public String getDestination() {
+        return this.destination;
+    }
+
+    public void setDestination(String destination) {
+        this.destination = destination;
+    }
+
+    public int getSource1() {
+        return this.source1;
+    }
+
+    public void setSource1(int source1) {
+        this.source1 = source1;
+    }
+
+    public int getSource2() {
+        return this.source2;
+    }
+
+    public void setSource2(int source2) {
+        this.source2 = source2;
+    }
+}
+
+class SIB {
     /*
      * 4 attributes: 1. Opcode - String 2. Destination register - String 3. First
      * source value - int 4. Second source value - int
      */
 }
 
-class sib {
+class PRB {
     /*
      * 4 attributes: 1. Opcode - String 2. Destination register - String 3. First
      * source value - int 4. Second source value - int
      */
 }
 
-class prb {
-    /*
-     * 4 attributes: 1. Opcode - String 2. Destination register - String 3. First
-     * source value - int 4. Second source value - int
-     */
-}
-
-class adb {
+class ADB {
     /*
      * 2 attributes: 1. Register name - String 2. Data memory address - int
      */
 }
 
-class reb {
+class REB {
     /*
      * 2 attributes: 1. register name - String 2. register value - int
      */
@@ -160,7 +200,7 @@ public class Psim {
 
         // Read in files
         ///////////////////////// INSTRUCTION MEMORY /////////////////////////
-        Deque<inm> inm = new ArrayDeque<inm>(); // Declaraing instruction memory array (INM)
+        Deque<INM> inm = new ArrayDeque<INM>(); // Declaraing instruction memory array (INM)
         INMsetup(instructions, inm);
         //////////////////////////
 
@@ -189,41 +229,23 @@ public class Psim {
         //////////////////////////
 
         ///////////////////////// TRANSITIONS /////////////////////////
-        boolean fired = false;
         int step = 0;
-        inb inb = new inb();
+        INB inb = new INB();
+        AIB aib = new AIB();
+        boolean readDecodeFired = false;
+        boolean issue1Fired = false;
         do {
-            //SETUP//////////////////////////////////////////////
+            // SETUP ////////////////////////////////////////////
             System.out.println("\nSTEP " + step++ + ":");
-            fired = false;
+            // Keeps track of whether or not any transition has fired this time step
+            readDecodeFired  = false; 
+            issue1Fired = false;
             /////////////////////////////////////////////////////
 
-            //READ/DECODE
-            if(inm.isEmpty() == false) {
-                fired = true;
-                //DEBUG:
-                System.out.println("DECODE OPCODE IS: " + inm.peek().getOpcode());
-                System.out.println("DECODE DEST IS: " + inm.peek().getDestination());
-                System.out.println("DECODE S1 IS: " + inm.peek().getSource1());
-                System.out.println("DECODE S2 IS: " + inm.peek().getSource2());
-                //
-                inb.setOpcode(inm.peek().getOpcode());
-                inb.setDestination(inm.peek().getDestination());
-                inb.setSource1(rgf[Character.getNumericValue(inm.peek().getSource1().charAt(1))]);
-                if(inm.peek().getSource2().charAt(0) == 'R') { //Check if source2 is register or immediate value
-                    inb.setSource1(rgf[Character.getNumericValue(inm.peek().getSource2().charAt(1))]);
-                } else {
-                    inb.setSource2(Character.getNumericValue(inm.peek().getSource2().charAt(0)));
-                }
-                inb.setToken(true);
-                //DEBUG:
-                System.out.println("READ OPCODE IS: " + inb.getOpcode());
-                System.out.println("READ DEST IS: " + inb.getDestination());
-                System.out.println("READ S1 IS: " + inb.getSource1());
-                System.out.println("READ S2 IS: " + inb.getSource2());
-                //
-            }
+            // READ/DECODE
+            readDecodeFired = readDecode(inb, inm, rgf, readDecodeFired);
             // TODO: ISSUE1
+            issue1Fired = issue1(inb, aib, issue1Fired);
             // TODO: ISSUE2
             // TODO: ASU (add/sub unit)
             // TODO: MLU1
@@ -232,20 +254,19 @@ public class Psim {
             // TODO: STORE
             // TODO: WRITE
 
-            if(inm.isEmpty() == false) {
-            inm.pop();
+            if (inm.isEmpty() == false) {
+                inm.pop();
             }
-        } while (fired == true);
+            // DEBUG:
+            System.out.println("readDecodeFired is " + readDecodeFired);
+            System.out.println("issue1Fired is " + issue1Fired);
+            //
+        } while ((readDecodeFired == true) || (issue1Fired == true)) ;
     }
 
-    public static void INMsetup(File instructions, Deque<inm> inm) {
-        // for (int i = 0; i < inm.length; i++) { // Creating INM objects
-
-        // }
-
+    public static void INMsetup(File instructions, Deque<INM> inm) {
         int instCount = 0;
 
-        // read
         try {
             Scanner scan = new Scanner(instructions);
 
@@ -254,7 +275,7 @@ public class Psim {
                     System.out.println("Too many instructions! Only 16 instructions can be inputted at once.");
                     System.exit(1);
                 }
-                inm tempINM = new inm();
+                INM tempINM = new INM();
                 // Parses input and places each segment into temporary array
                 String[] temp = scan.nextLine().replaceAll("\\<", "").replaceAll("\\>", "").split(",");
                 // Accesses temp array to set values in INM
@@ -301,6 +322,68 @@ public class Psim {
             scan.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static boolean readDecode(INB inb, Deque<INM> inm, int[] rgf, boolean fired) {
+        // Check if there's an object in inm
+        if (inm.isEmpty() == false) {
+
+            // DEBUG:
+            System.out.println("DECODE OPCODE IS: " + inm.peek().getOpcode());
+            System.out.println("DECODE DEST IS: " + inm.peek().getDestination());
+            System.out.println("DECODE S1 IS: " + inm.peek().getSource1());
+            System.out.println("DECODE S2 IS: " + inm.peek().getSource2());
+            //
+
+            // Perform operation
+            inb.setOpcode(inm.peek().getOpcode());
+            inb.setDestination(inm.peek().getDestination());
+            inb.setSource1(rgf[Character.getNumericValue(inm.peek().getSource1().charAt(1))]);
+            if (inm.peek().getSource2().charAt(0) == 'R') { // Check if source2 is register or immediate value
+                inb.setSource1(rgf[Character.getNumericValue(inm.peek().getSource2().charAt(1))]);
+            } else {
+                inb.setSource2(Character.getNumericValue(inm.peek().getSource2().charAt(0)));
+            }
+
+            // Place token in inb
+            inb.setToken(true);
+
+            // DEBUG:
+            System.out.println("READ OPCODE IS: " + inb.getOpcode());
+            System.out.println("READ DEST IS: " + inb.getDestination());
+            System.out.println("READ S1 IS: " + inb.getSource1());
+            System.out.println("READ S2 IS: " + inb.getSource2());
+            //
+
+            // Transition fired
+            return fired = true;
+        } else {
+            return fired = false;
+        }
+    }
+
+    public static boolean issue1(INB inb, AIB aib, boolean fired) {
+        // Check if inb has an arithmetic instruction token
+        //DEBUG:
+        //System.out.println("INB token is " + inb.hasToken());
+        //System.out.println("INB opcode is " + inb.getOpcode();
+        //
+        if (inb.hasToken() && (inb.getOpcode().equals("ADD") || inb.getOpcode().equals("SUB") || inb.getOpcode().equals("MUL"))) {
+            // Take token from inb
+            inb.setToken(false);
+            // Perform operation
+            aib.setOpcode(inb.getOpcode());
+            aib.setDestination(inb.getDestination());
+            aib.setSource1(inb.getSource1());
+            aib.setSource2(inb.getSource2());
+            // Place token in aib
+            aib.setToken(true);
+
+            // Transition fired
+            return fired = true;
+        } else {
+            return fired = false;
         }
     }
 }
