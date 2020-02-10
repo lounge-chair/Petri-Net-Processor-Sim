@@ -332,12 +332,14 @@ class REB {
 // }
 
 public class Psim {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
         // Declare files
         File instructions = new File("instructions.txt");
         File registers = new File("registers.txt");
         File datamemory = new File("datamemory.txt");
-
+        PrintStream simulation = new PrintStream("simulation.txt");
+        System.setOut(simulation);
+        
         // Read in files
         ///////////////////////// INSTRUCTION MEMORY /////////////////////////
         ArrayDeque<INM> inm = new ArrayDeque<INM>(); // Declaraing instruction memory array (INM)
@@ -350,10 +352,10 @@ public class Psim {
         RGFsetup(registers, rgf); // Run setup function
 
         // DEBUG: CHECK RGF ARRAY
-        for (int j = 0; j < 16; j++) {
-            System.out.println("registervalue at R" + j + " is " + rgf[j]);
-            // System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
-        }
+        // for (int j = 0; j < 16; j++) {
+        //     System.out.println("registervalue at R" + j + " is " + rgf[j]);
+        //     // System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
+        // }
         //////////////////////////
 
         ///////////////////////// DATA MEMORY /////////////////////////////////
@@ -362,14 +364,14 @@ public class Psim {
         DAMsetup(datamemory, dam); // Run setup function
 
         // DEBUG: CHECK RGF ARRAY
-        for (int k = 0; k < 16; k++) {
-            System.out.println("DATA at " + k + " is " + dam[k]);
-            // System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
-        }
+        // for (int k = 0; k < 16; k++) {
+        //     System.out.println("DATA at " + k + " is " + dam[k]);
+        //     // System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
+        // }
         //////////////////////////
 
         ///////////////////////// TRANSITIONS ////////////////////////////////
-        int step = 1;
+        int step = 0;
         INB inb = new INB();
         AIB aib = new AIB();
         SIB sib = new SIB();
@@ -378,10 +380,12 @@ public class Psim {
         ADB adb = new ADB();
 
         boolean readDecodeFired, issue1Fired, issue2Fired, asuFired, mlu1Fired, mlu2Fired, addrFired, storeFired,
-                writeFired;
+                writeFired, done = false;
 
 
-        //TODO: Print 0 time step
+        //Print 0 time step
+        System.out.println("STEP " + step++ + ":");
+        printSim(inm, inb, aib, sib, prb, adb, reb, rgf, dam, done);
 
         do {
             // SETUP ////////////////////////////////////////////
@@ -423,7 +427,25 @@ public class Psim {
             // TODO: WRITE
 
             // Print time step
-            printSim(inm, inb, aib, sib, prb, adb, reb, rgf, dam);
+            printSim(inm, inb, aib, sib, prb, adb, reb, rgf, dam, done);
+
+            //DEBUG:
+            // System.out.println("readDecodeFired is " + readDecodeFired);
+            // System.out.println("issue1Fired is " + issue1Fired);
+            // System.out.println("issue2Fired is " + issue2Fired);
+            // System.out.println("asuFired is " + asuFired);
+            // System.out.println("mlu1Fired is " + mlu1Fired);
+            // System.out.println("mlu2Fired is " + mlu2Fired);
+            // System.out.println("addrFired is " + addrFired);
+            // System.out.println("storeFired is " + storeFired);
+            // System.out.println("writeFired is " + writeFired);
+            //
+
+            if(done) {
+                break;
+            } else if(writeFired && !readDecodeFired && !issue1Fired && !issue2Fired && !asuFired && !mlu1Fired && !mlu2Fired && !addrFired && !storeFired){
+                done = true;
+            } 
         } while ((readDecodeFired == true) || (issue1Fired == true) || (issue2Fired == true) || (asuFired == true) || (mlu1Fired == true) || (mlu2Fired == true) || (addrFired == true) || (storeFired == true) || (writeFired == true));
     }
 
@@ -646,22 +668,20 @@ public class Psim {
 
     public static boolean write(ArrayDeque<REB> reb, int[] rgf) {
         if (reb.isEmpty() == false) {
-            while (reb.isEmpty() == false) {
                 //DEBUG:
-                System.out.println("REB destination is " + Character.getNumericValue(reb.peek().getDestination().charAt(1)));
-                System.out.println("REB value is " + reb.peek().getValue());
+                //System.out.println("REB destination is " + Character.getNumericValue(reb.peek().getDestination().charAt(1)));
+                //System.out.println("REB value is " + reb.peek().getValue());
                 //
-                
-                rgf[Character.getNumericValue(reb.peek().getDestination().charAt(1))] = reb.peek().getValue();
+                //int length = reb.peek().getDestination().length();
+                rgf[Integer.parseInt(reb.peek().getDestination().replaceAll("R", ""))] = reb.peek().getValue();
                 reb.pop();
-            }
             return true;
         } else {
             return false;
         }
         
     }
-    public static void printSim(ArrayDeque<INM> inm, INB inb, AIB aib, SIB sib, PRB prb, ADB adb, ArrayDeque<REB> reb, int[] rgf, int[] dam) {
+    public static void printSim(ArrayDeque<INM> inm, INB inb, AIB aib, SIB sib, PRB prb, ADB adb, ArrayDeque<REB> reb, int[] rgf, int[] dam, boolean done) {
         // Print INM
         Deque<INM> tempinm = inm.clone();
         boolean first = true;
@@ -774,7 +794,9 @@ public class Psim {
 
             }
         }
-        System.out.print("\n");
+        if(!done) {
+            System.out.print("\n");
+        }
     }
 
 }
