@@ -1,5 +1,4 @@
 import java.util.*;
-
 import java.io.*;
 
 class INM {
@@ -285,18 +284,6 @@ class REB {
     private String destination;
     private int value;
 
-    // public REB() {
-    //     hasToken = false; // Set the initial value for token
-    // }
-
-    // public boolean hasToken() {
-    //     return this.hasToken;
-    // }
-
-    // public void setToken(boolean hasToken) {
-    //     this.hasToken = hasToken;
-    // }
-
     public String getDestination() {
         return this.destination;
     }
@@ -313,23 +300,6 @@ class REB {
         this.value = value;
     }
 }
-// class rgf
-// {
-// /*
-// 2 attributes:
-// 1. register name - String
-// 2. register value - int
-// */
-// }
-
-// class dam
-// {
-// /*
-// 2 attributes:
-// 1. address - int
-// 2. value - int
-// */
-// }
 
 public class Psim {
     public static void main(String[] args) throws FileNotFoundException {
@@ -350,24 +320,12 @@ public class Psim {
         int[] rgf = new int[16]; // Instantiating register file place (RGF)
         Arrays.fill(rgf, -99); // Set default value to -99
         RGFsetup(registers, rgf); // Run setup function
-
-        // DEBUG: CHECK RGF ARRAY
-        // for (int j = 0; j < 16; j++) {
-        //     System.out.println("registervalue at R" + j + " is " + rgf[j]);
-        //     // System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
-        // }
         //////////////////////////
 
         ///////////////////////// DATA MEMORY /////////////////////////////////
         int[] dam = new int[16]; // Instantiating data memory place (DAM)
         Arrays.fill(dam, -99); // Set default value to -99
         DAMsetup(datamemory, dam); // Run setup function
-
-        // DEBUG: CHECK RGF ARRAY
-        // for (int k = 0; k < 16; k++) {
-        //     System.out.println("DATA at " + k + " is " + dam[k]);
-        //     // System.out.println("Your OPCODE at INM is " + inm[0].getOpcode());
-        // }
         //////////////////////////
 
         ///////////////////////// TRANSITIONS ////////////////////////////////
@@ -424,22 +382,8 @@ public class Psim {
                 inm.pop();
             }
 
-            // TODO: WRITE
-
             // Print time step
             printSim(inm, inb, aib, sib, prb, adb, reb, rgf, dam, done);
-
-            //DEBUG:
-            // System.out.println("readDecodeFired is " + readDecodeFired);
-            // System.out.println("issue1Fired is " + issue1Fired);
-            // System.out.println("issue2Fired is " + issue2Fired);
-            // System.out.println("asuFired is " + asuFired);
-            // System.out.println("mlu1Fired is " + mlu1Fired);
-            // System.out.println("mlu2Fired is " + mlu2Fired);
-            // System.out.println("addrFired is " + addrFired);
-            // System.out.println("storeFired is " + storeFired);
-            // System.out.println("writeFired is " + writeFired);
-            //
 
             if(done) {
                 break;
@@ -652,13 +596,7 @@ public class Psim {
             // Take token from aib
             adb.setToken(false);
             // Perform operation
-            //DEBUG:
-            //System.out.println("Get data address: " + adb.getDataAddress());
-            //System.out.println("Get register int: " + adb.getRegisterName().charAt(1));
-            //
             dam[adb.getDataAddress()] = rgf[Character.getNumericValue(adb.getRegisterName().charAt(1))];
-            // Place token in reb
-            //adb.setToken(true);
             // Transition fired
             return true;
         } else {
@@ -668,11 +606,6 @@ public class Psim {
 
     public static boolean write(ArrayDeque<REB> reb, int[] rgf) {
         if (reb.isEmpty() == false) {
-                //DEBUG:
-                //System.out.println("REB destination is " + Character.getNumericValue(reb.peek().getDestination().charAt(1)));
-                //System.out.println("REB value is " + reb.peek().getValue());
-                //
-                //int length = reb.peek().getDestination().length();
                 rgf[Integer.parseInt(reb.peek().getDestination().replaceAll("R", ""))] = reb.peek().getValue();
                 reb.pop();
             return true;
@@ -740,7 +673,7 @@ public class Psim {
         }
         System.out.print("\n");
 
-        // TODO: Print ADB
+        // Print ADB
         System.out.print("ADB:");
         if (adb.hasToken()) {
             System.out.print("<" + adb.getRegisterName() + ",");
@@ -791,12 +724,10 @@ public class Psim {
                     first = false;
                 }
                 System.out.print("<" + d + "," + dam[d] + ">");
-
             }
         }
         if(!done) {
             System.out.print("\n");
         }
     }
-
 }
