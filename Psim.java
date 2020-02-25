@@ -1,6 +1,9 @@
+// On my honor, I have neither given nor received unauthorized aid on this assignment.
+
 import java.util.*;
 import java.io.*;
 
+///////////////////////// OBJECT DEFINITIONS /////////////////////////
 class INM {
     private String opcode;
     private String destination;
@@ -253,7 +256,7 @@ class ADB {
     private boolean hasToken;
     private String registerName;
     private int dataAddress;
-    
+
     public boolean hasToken() {
         return this.hasToken;
     }
@@ -280,7 +283,7 @@ class ADB {
 }
 
 class REB {
-    //private boolean hasToken;
+    // private boolean hasToken;
     private String destination;
     private int value;
 
@@ -301,15 +304,16 @@ class REB {
     }
 }
 
+///////////////////////// FUNCTION DEFINITIONS /////////////////////////
 public class Psim {
     public static void main(String[] args) throws FileNotFoundException {
-        // Declare files
+        // Declare I/O files
         File instructions = new File("instructions.txt");
         File registers = new File("registers.txt");
         File datamemory = new File("datamemory.txt");
         PrintStream simulation = new PrintStream("simulation.txt");
         System.setOut(simulation);
-        
+
         // Read in files
         ///////////////////////// INSTRUCTION MEMORY /////////////////////////
         ArrayDeque<INM> inm = new ArrayDeque<INM>(); // Declaraing instruction memory array (INM)
@@ -340,15 +344,15 @@ public class Psim {
         boolean readDecodeFired, issue1Fired, issue2Fired, asuFired, mlu1Fired, mlu2Fired, addrFired, storeFired,
                 writeFired, done = false;
 
-
-        //Print 0 time step
+        // Print 0 time step
         System.out.println("STEP " + step++ + ":");
         printSim(inm, inb, aib, sib, prb, adb, reb, rgf, dam, done);
 
+        // Time step loop
         do {
-            // SETUP ////////////////////////////////////////////
+            ////////////////////////// SETUP //////////////////////////
             System.out.println("\nSTEP " + step++ + ":");
-            // Keeps track of whether or not any transition has fired this time step
+            // "Fired" bools keep track of whether or not any transition has fired this time step
             readDecodeFired = false;
             issue1Fired = false;
             issue2Fired = false;
@@ -359,14 +363,17 @@ public class Psim {
             storeFired = false;
             writeFired = false;
 
-            /////////////////////////////////////////////////////
-            //WRITE
+            ////////////////////////// FUNCTION CALLS //////////////////////////
+            // These functions are called in reverse to prevent one instruction from transitioning through
+            // more than one transition in a single time-step.
+
+            // WRITE
             writeFired = write(reb, rgf);
-            //STORE
+            // STORE
             storeFired = store(adb, rgf, dam);
-            //ADDR
+            // ADDR 
             addrFired = addr(sib,adb);
-            //MLU2
+            // MLU2
             mlu2Fired = mlu2(prb, reb, rgf);
             // MLU1
             mlu1Fired = mlu1(aib, prb);
@@ -385,14 +392,22 @@ public class Psim {
             // Print time step
             printSim(inm, inb, aib, sib, prb, adb, reb, rgf, dam, done);
 
+            // End loop when last operation is completed
             if(done) {
-                break;
-            } else if(writeFired && !readDecodeFired && !issue1Fired && !issue2Fired && !asuFired && !mlu1Fired && !mlu2Fired && !addrFired && !storeFired){
+                break ;
+
+            // CHANGE :     
+            } else if((writeFired || addrFired) && !readDecodeFired && !issue1Fired && !issue2Fired && !asuFired && !mlu1Fired && !mlu2Fired ){
+            // ORIGINAL :
+            //else if(writeFired && !readDecodeFired && !issue1Fired && !issue2Fired && !asuFired && !mlu1Fired && !mlu2Fired && !addrFired && !storeFired){ 
                 done = true;
             } 
+
+
         } while ((readDecodeFired == true) || (issue1Fired == true) || (issue2Fired == true) || (asuFired == true) || (mlu1Fired == true) || (mlu2Fired == true) || (addrFired == true) || (storeFired == true) || (writeFired == true));
     }
 
+    // FIlls INM deque with instructions
     public static void INMsetup(File instructions, Deque<INM> inm) {
         int instCount = 0;
 
@@ -412,7 +427,7 @@ public class Psim {
                 tempINM.setDestination(temp[1]);
                 tempINM.setSource1(temp[2]);
                 tempINM.setSource2(temp[3]);
-
+                // Adds tempINM to INM deque
                 inm.add(tempINM);
             }
             scan.close();
@@ -422,6 +437,7 @@ public class Psim {
         }
     }
 
+    // Fills RGF array with register values
     public static void RGFsetup(File registers, int[] rgf) {
         try {
             Scanner scan = new Scanner(registers);
@@ -454,15 +470,22 @@ public class Psim {
         }
     }
 
+    // Read/Decode transition
     public static boolean readDecode(INB inb, Deque<INM> inm, int[] rgf) {
         // Check if there's an object in inm
         if (inm.isEmpty() == false) {
             // Perform operation
             inb.setOpcode(inm.peek().getOpcode());
             inb.setDestination(inm.peek().getDestination());
-            inb.setSource1(rgf[Character.getNumericValue(inm.peek().getSource1().charAt(1))]);
+            // CHANGE :
+            inb.setSource1(rgf[Integer.parseInt(inm.peek().getSource1().replaceAll("R", ""))]);
+            // ORIGINAL :
+            //  inb.setSource1(rgf[Character.getNumericValue(inm.peek().getSource1().charAt(1))]);
             if (inm.peek().getSource2().charAt(0) == 'R') { // Check if source2 is register or immediate value
-                inb.setSource2(rgf[Character.getNumericValue(inm.peek().getSource2().charAt(1))]);
+                // CHANGE :
+                inb.setSource2(rgf[Integer.parseInt(inm.peek().getSource2().replaceAll("R", ""))]);
+                // ORIGINAL :
+                // inb.setSource2(rgf[Character.getNumericValue(inm.peek().getSource2().charAt(1))]);
             } else {
                 inb.setSource2(Character.getNumericValue(inm.peek().getSource2().charAt(0)));
             }
@@ -475,6 +498,7 @@ public class Psim {
         }
     }
 
+    // Issue1 transition
     public static boolean issue1(INB inb, AIB aib) {
         // Check if inb has an arithmetic instruction token
         if (inb.hasToken()
@@ -495,6 +519,7 @@ public class Psim {
         }
     }
 
+    // Issue2 transition
     public static boolean issue2(INB inb, SIB sib) {
         // Check if inb has a store instruction token
         if (inb.hasToken() && (inb.getOpcode().equals("ST"))) {
@@ -514,6 +539,7 @@ public class Psim {
         }
     }
 
+    // ASU transition
     public static boolean asu(AIB aib, ArrayDeque<REB> reb, int[] rgf) {
         // Check if aib has add or sub token
         if (aib.hasToken() && (aib.getOpcode().equals("ADD") || aib.getOpcode().equals("SUB"))) {
@@ -527,9 +553,8 @@ public class Psim {
             } else if (aib.getOpcode().equals("SUB")) {
                 tempreb.setValue(aib.getSource1() - aib.getSource2());
             }
+            // Add tempreb to reb
             reb.add(tempreb);
-            // Place token in reb
-            // reb.setToken(true);
             // Transition fired
             return true;
         } else {
@@ -537,8 +562,9 @@ public class Psim {
         }
     }
 
+    // MLU1 transition
     public static boolean mlu1(AIB aib, PRB prb) {
-        // Check if aib has add or sub token
+        // Check if aib has mul token
         if (aib.hasToken() && (aib.getOpcode().equals("MUL"))) {
             // Take token from aib
             aib.setToken(false);
@@ -556,8 +582,9 @@ public class Psim {
         }
     }
 
+    // MLU2 transition
     public static boolean mlu2(PRB prb, ArrayDeque<REB> reb, int[] rgf) {
-        // Check if aib has add or sub token
+        // Check if prb has mul token
         if (prb.hasToken() && (prb.getOpcode().equals("MUL"))) {
             // Take token from aib
             prb.setToken(false);
@@ -565,9 +592,8 @@ public class Psim {
             REB tempreb = new REB();
             tempreb.setDestination(prb.getDestination());
             tempreb.setValue(prb.getSource1() * prb.getSource2());
+            // Add tempreb to reb deque
             reb.add(tempreb);
-            // Place token in reb
-            //reb.setToken(true);
             // Transition fired
             return true;
         } else {
@@ -575,14 +601,15 @@ public class Psim {
         }
     }
 
+    // Addr transition
     public static boolean addr(SIB sib, ADB adb) {
         if (sib.hasToken()) {
-            // Take token from aib
+            // Take token from sib
             sib.setToken(false);
             // Perform operation
             adb.setRegisterName(sib.getDestination());
             adb.setDataAddress(sib.getSource1()+sib.getSource2());
-            // Place token in reb
+            // Place token in adb
             adb.setToken(true);
             // Transition fired
             return true;
@@ -591,6 +618,7 @@ public class Psim {
         }
     }
     
+    // Store transition
     public static boolean store(ADB adb, int[] rgf, int[] dam) {
         if (adb.hasToken()) {
             // Take token from aib
@@ -604,6 +632,7 @@ public class Psim {
         }
     }
 
+    // Write transition
     public static boolean write(ArrayDeque<REB> reb, int[] rgf) {
         if (reb.isEmpty() == false) {
                 rgf[Integer.parseInt(reb.peek().getDestination().replaceAll("R", ""))] = reb.peek().getValue();
@@ -612,8 +641,9 @@ public class Psim {
         } else {
             return false;
         }
-        
     }
+            
+    // Print simulation
     public static void printSim(ArrayDeque<INM> inm, INB inb, AIB aib, SIB sib, PRB prb, ADB adb, ArrayDeque<REB> reb, int[] rgf, int[] dam, boolean done) {
         // Print INM
         Deque<INM> tempinm = inm.clone();
@@ -725,7 +755,7 @@ public class Psim {
                 }
                 System.out.print("<" + d + "," + dam[d] + ">");
             }
-        }
+        } 
         if(!done) {
             System.out.print("\n");
         }
